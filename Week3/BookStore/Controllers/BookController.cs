@@ -10,6 +10,9 @@ using static BookStore.BookOperations.CreateBook.CreateBookCommand;
 using BookStore.BookOperations.DeleteBook;
 using BookStore.BookOperations.UpdateBook;
 using static BookStore.BookOperations.UpdateBook.UpdateBookCommand;
+using FluentValidation;
+using System.Reflection.Metadata;
+using BookStore.BookOperations.GetBookDetail;
 
 namespace BookStore.Controllers
 {
@@ -32,19 +35,29 @@ namespace BookStore.Controllers
         public IActionResult GetBooks()
         {
             GetBookQuery query = new GetBookQuery(_context);
-            var result = query.Handle();
+            var result = query.Handle();  // Call Handle function
             return Ok(result);
         }
 
 
-        //GETBYID
-        [HttpGet("{id}")]
+        //GET BY ID
+        [HttpGet("{id}")] // Call Handle function
         public IActionResult GetById(int id)
         {
             BookDetailViewModel result;
-            GetBookDetailQuery query = new GetBookDetailQuery(_context);
-            query.BookId = id;
-            result = query.Handle();
+            try
+            {
+                GetBookDetailQuery query = new GetBookDetailQuery(_context);
+                query.BookId = id;
+                GetBookDetailQueryValidator validator = new GetBookDetailQueryValidator();
+                validator.ValidateAndThrow(query); //Validator
+                result = query.Handle(); // Call Handle function
+            }
+
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
             return Ok(result);
         }
 
@@ -58,7 +71,9 @@ namespace BookStore.Controllers
             try
             {
                 command.Model = newBook;
-                command.Handle();
+                CreateBookCommandValidator validator = new CreateBookCommandValidator();
+                validator.ValidateAndThrow(command); //Validator
+                command.Handle(); // Call Handle function
 
             } catch(Exception ex)
             {
@@ -73,10 +88,19 @@ namespace BookStore.Controllers
         [HttpPut("{id}")]
         public IActionResult UpdateBook(int id, [FromBody] UpdateBookModel updatedBook)
         {
-            UpdateBookCommand command = new UpdateBookCommand(_context);
-            command.BookId = id;
-            command.Model = updatedBook;
-            command.Handle();
+            try
+            {
+                UpdateBookCommand command = new UpdateBookCommand(_context);
+                command.BookId = id;
+                command.Model = updatedBook;
+                UpdateBookCommandValidator validator = new UpdateBookCommandValidator();
+                validator.ValidateAndThrow(command); //Validator
+                command.Handle(); // Call Handle function
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
             return Ok();
         }
 
@@ -85,9 +109,19 @@ namespace BookStore.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteBook(int id)
         {
-            DeleteBookCommand command = new DeleteBookCommand(_context);
-            command.BookId = id;
-            command.Handle();
+            try
+            {
+                DeleteBookCommand command = new DeleteBookCommand(_context);
+                command.BookId = id;
+
+                DeleteBookCommandValidator validator = new DeleteBookCommandValidator();
+                validator.ValidateAndThrow(command); //Validator
+                command.Handle(); // Call Handle function
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
             return Ok();
         }
 
